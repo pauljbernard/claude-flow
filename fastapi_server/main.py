@@ -5,6 +5,7 @@ import psutil
 import asyncio
 import random
 from typing import Dict, Any
+import contextlib
 
 app = FastAPI(title="Claude Flow API")
 
@@ -31,6 +32,8 @@ metrics_store = {
     "load": [],
     "costs": [],
 }
+
+MAX_HISTORY = 100
 
 # ----- Helper functions -----
 
@@ -138,7 +141,7 @@ def get_current_metrics() -> Dict[str, Any]:
     token_usage = calculate_token_usage()
     health = perform_health_check()
     load = monitor_load()
-    return {
+    result = {
         "performance": {
             "responseTime": round(avg_resp),
             "throughput": round(throughput),
@@ -149,6 +152,14 @@ def get_current_metrics() -> Dict[str, Any]:
         "health": health,
         "load": load,
     }
+    metrics_store["performance"].append(result["performance"])
+    metrics_store["tokens"].append(result["tokens"])
+    metrics_store["health"].append(result["health"])
+    metrics_store["load"].append(result["load"])
+    for key in metrics_store:
+        if len(metrics_store[key]) > MAX_HISTORY:
+            metrics_store[key].pop(0)
+    return result
 
 # ----- REST endpoints -----
 @app.get("/api/analysis/performance-report")
@@ -417,13 +428,31 @@ async def capacity_plan():
         "timeline": timeline,
     }
 
+
+@app.get("/api/analysis/historical-metrics")
+async def historical_metrics():
+    """Return in-memory stored metrics for basic historical insights."""
+    return metrics_store
+
 # ----- WebSocket -----
 @app.websocket("/api/analysis/ws")
 async def analysis_ws(websocket: WebSocket):
     await websocket.accept()
+    async def send_loop():
+        try:
+            while True:
+                await websocket.send_json({"type": "metrics_update", "payload": get_current_metrics()})
+                await asyncio.sleep(5)
+        except WebSocketDisconnect:
+            pass
+
+    send_task = asyncio.create_task(send_loop())
     try:
         while True:
-            await websocket.send_json({"type": "metrics_update", "payload": get_current_metrics()})
-            await asyncio.sleep(5)
+            data = await websocket.receive_json()
+            if data.get("type") == "request_metrics":
+                await websocket.send_json({"type": "metrics_update", "payload": get_current_metrics()})
     except WebSocketDisconnect:
-        pass
+        send_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await send_task

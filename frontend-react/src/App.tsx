@@ -39,6 +39,7 @@ const endpointMap: Record<string, string> = {
   health_check: `${API_BASE}/api/analysis/health-check`,
   load_monitor: `${API_BASE}/api/analysis/load-monitor`,
   capacity_plan: `${API_BASE}/api/analysis/capacity-plan`,
+  historical_metrics: `${API_BASE}/api/analysis/historical-metrics`,
 };
 
 const tabs = ['metrics', 'reports', 'analysis', 'health'] as const;
@@ -51,6 +52,7 @@ const toolGroups: Record<Tab, { id: string; label: string }[]> = {
     { id: 'token_usage', label: 'Token Usage' },
     { id: 'metrics_collect', label: 'Collect Metrics' },
     { id: 'usage_stats', label: 'Usage Stats' },
+    { id: 'historical_metrics', label: 'Historical Metrics' },
   ],
   reports: [
     { id: 'performance_report', label: 'Performance Report' },
@@ -81,6 +83,7 @@ export default function App() {
   const tokenChartRef = useRef<HTMLCanvasElement>(null);
   const healthChartRef = useRef<HTMLCanvasElement>(null);
   const loadChartRef = useRef<HTMLCanvasElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     const perfCtx = perfChartRef.current?.getContext('2d');
@@ -126,6 +129,7 @@ export default function App() {
       ? API_BASE.replace(/^http/, location.protocol === 'https:' ? 'wss' : 'ws')
       : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
     const ws = new WebSocket(`${wsBase}/api/analysis/ws`);
+    wsRef.current = ws;
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'metrics_update') {
@@ -181,6 +185,10 @@ export default function App() {
     }
   };
 
+  const requestMetrics = () => {
+    wsRef.current?.send(JSON.stringify({ type: 'request_metrics' }));
+  };
+
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: 20 }}>
       <h1>Claude Flow Analysis Tools</h1>
@@ -209,6 +217,7 @@ export default function App() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
             <canvas ref={perfChartRef} width={300} height={200}></canvas>
             <canvas ref={tokenChartRef} width={200} height={200}></canvas>
+            <button onClick={requestMetrics}>Request Metrics</button>
           </div>
         )}
         {activeTab === 'health' && (
