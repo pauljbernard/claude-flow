@@ -39,6 +39,17 @@
 - **npm 9+** or equivalent package manager
 - **Windows users**: See [Windows Installation Guide](https://github.com/ruvnet/claude-code-flow/blob/main/docs/windows-installation.md) for special instructions
 
+### 🏃‍♂️ **Running the FastAPI Service**
+
+The React dashboard now communicates with a lightweight FastAPI wrapper.
+
+```bash
+pip install -r fastapi_server/requirements.txt
+uvicorn fastapi_server.main:app --reload
+```
+
+Set `VITE_API_BASE_URL` in `frontend-react/.env` to point to this service when developing locally.
+
 ⚠️ **IMPORTANT**: Claude Code must be installed first:
 
 ```bash

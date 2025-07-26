@@ -24,20 +24,21 @@ Chart.register(
   RadialLinearScale,
 );
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 const endpointMap: Record<string, string> = {
-  performance_report: '/api/analysis/performance-report',
-  bottleneck_analyze: '/api/analysis/bottleneck-analyze',
-  token_usage: '/api/analysis/token-usage',
-  benchmark_run: '/api/analysis/benchmark-run',
-  metrics_collect: '/api/analysis/metrics-collect',
-  trend_analysis: '/api/analysis/trend-analysis',
-  cost_analysis: '/api/analysis/cost-analysis',
-  quality_assess: '/api/analysis/quality-assess',
-  error_analysis: '/api/analysis/error-analysis',
-  usage_stats: '/api/analysis/usage-stats',
-  health_check: '/api/analysis/health-check',
-  load_monitor: '/api/analysis/load-monitor',
-  capacity_plan: '/api/analysis/capacity-plan',
+  performance_report: `${API_BASE}/api/analysis/performance-report`,
+  bottleneck_analyze: `${API_BASE}/api/analysis/bottleneck-analyze`,
+  token_usage: `${API_BASE}/api/analysis/token-usage`,
+  benchmark_run: `${API_BASE}/api/analysis/benchmark-run`,
+  metrics_collect: `${API_BASE}/api/analysis/metrics-collect`,
+  trend_analysis: `${API_BASE}/api/analysis/trend-analysis`,
+  cost_analysis: `${API_BASE}/api/analysis/cost-analysis`,
+  quality_assess: `${API_BASE}/api/analysis/quality-assess`,
+  error_analysis: `${API_BASE}/api/analysis/error-analysis`,
+  usage_stats: `${API_BASE}/api/analysis/usage-stats`,
+  health_check: `${API_BASE}/api/analysis/health-check`,
+  load_monitor: `${API_BASE}/api/analysis/load-monitor`,
+  capacity_plan: `${API_BASE}/api/analysis/capacity-plan`,
 };
 
 const tabs = ['metrics', 'reports', 'analysis', 'health'] as const;
@@ -121,7 +122,10 @@ export default function App() {
       });
     }
 
-    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/analysis/ws`);
+    const wsBase = API_BASE
+      ? API_BASE.replace(/^http/, location.protocol === 'https:' ? 'wss' : 'ws')
+      : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
+    const ws = new WebSocket(`${wsBase}/api/analysis/ws`);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'metrics_update') {
