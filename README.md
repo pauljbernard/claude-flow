@@ -699,6 +699,34 @@ npm run test:alpha
 - Verify Claude Code MCP integration
 - Report performance metrics and bottlenecks
 
+## 🖥️ React Frontend Dashboard
+
+Claude-Flow now includes a lightweight React interface for monitoring the system and running all analysis tools.
+
+### Starting the Backend
+
+```bash
+# from the repository root
+npm install
+npm run dev        # launches the API server on http://localhost:3000
+```
+
+### Starting the Frontend
+
+```bash
+# in a separate terminal
+cd frontend-react
+npm install
+npm run dev        # starts the Vite dev server on http://localhost:5173
+```
+
+### Using the Dashboard
+
+1. Navigate to `http://localhost:5173` once both servers are running.
+2. Use the **Metrics**, **Reports**, **Analysis**, and **Health** tabs to explore different tools.
+3. Click any tool button to run the analysis and view results under the charts.
+4. Charts update in real time via WebSocket as new metrics arrive.
+
 ---
 
 ## 🛡️ **Enhanced Safety & Security Features**
